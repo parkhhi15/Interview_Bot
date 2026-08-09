@@ -54,8 +54,29 @@ export function generateLocalFeedback(
   session: InterviewState,
   candidate: Candidate
 ): FeedbackSummary {
-  const answers = session.answers.filter((a) => a.answerText && a.answerText.trim().length > 0);
+const answers = session.answers.filter((a) => a.answerText && a.answerText.trim().length > 0);
   const totalQuestions = answers.length;
+
+  // NEW: Count genuinely correct / meaningful answers separately from
+  // non-responsive or "help requested" attempts, so the report shows
+  // "X answered correctly out of Y" instead of always showing all as correct.
+  let correctAnswersCount = 0;
+  let unansweredQuestionsCount = 0;
+  answers.forEach((ans) => {
+    const evalData = ans.evaluation;
+    const quality = evalData?.answerQuality;
+    const isNonResponsive =
+      quality === 'non_responsive' ||
+      quality === 'weak' ||
+      (evalData ? normalizeScore(evalData.score) < 40 : true) ||
+      !ans.answerText ||
+      ans.answerText.trim().length < 10;
+    if (isNonResponsive) {
+      unansweredQuestionsCount += 1;
+    } else {
+      correctAnswersCount += 1;
+    }
+  });
 
   if (totalQuestions === 0) {
     return {
@@ -273,6 +294,8 @@ export function generateLocalFeedback(
     completedAt: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
     questionLimit: session.totalQuestions,
     totalQuestionsAnswered: answers.length,
+    correctAnswersCount,
+    unansweredQuestionsCount,
     overallScore,
     overallAssessment: overallAssessmentTag,
     assessmentConfidence: confidenceTag,

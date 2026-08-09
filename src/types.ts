@@ -191,8 +191,10 @@ export interface FeedbackSummary {
   candidateRole?: string;
   sessionId?: string;
   completedAt?: string;
-  questionLimit?: number;
+questionLimit?: number;
   totalQuestionsAnswered?: number;
+  correctAnswersCount?: number;
+  unansweredQuestionsCount?: number;
   overallScore: number;
   overallAssessment?: 'Strong' | 'Satisfactory' | 'Developing' | 'Needs Review';
   assessmentConfidence?: 'High' | 'Medium' | 'Low';

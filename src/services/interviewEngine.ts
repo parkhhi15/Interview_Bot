@@ -496,9 +496,104 @@ function evaluateAnswerLocally(
   const gibberishPatterns = ['asdf', 'qwerty', 'zxcv', '1234', 'test', 'hello', 'hi', 'hey', 'yo', 'sup'];
   const isGibberish = gibberishPatterns.some((p) => lowerAnswer === p || (words.length <= 2 && lowerAnswer.includes(p)));
 
-  const isExplicitIdk = lowerAnswer === 'idk' || lowerAnswer === 'i dont know' || lowerAnswer === "i don't know" || lowerAnswer === 'not sure' || lowerAnswer === 'no idea';
+const isExplicitIdk = lowerAnswer === 'idk' || lowerAnswer === 'i dont know' || lowerAnswer === "i don't know" || lowerAnswer === 'not sure' || lowerAnswer === 'no idea';
+
+  // NEW: Detect when the candidate asks the interviewer to explain the question/topic,
+  // or explicitly says they cannot answer / need help / need a refresher.
+  const helpRequestPatterns = [
+    'can you explain',
+    'please explain',
+    'explain this',
+    'explain that',
+    'explain the question',
+    'explain to me',
+    'could you explain',
+    'can you help me',
+    'help me understand',
+    'help me',
+    'i need help',
+    'i need a hint',
+    'i dont understand',
+    'i don\'t understand',
+    'i am not understanding',
+    'i cant answer',
+    'i can\'t answer',
+    'i cannot answer',
+    'i dont know how to answer',
+    'i don\'t know how to answer',
+    'im not sure',
+    'i\'m not sure',
+    'i am not sure',
+    'not able to answer',
+    'cant solve',
+    'can\'t solve',
+    'stuck on this',
+    'im stuck',
+    'i\'m stuck',
+    'give me a hint',
+    'give me some hints',
+    'can you teach',
+    'explain it in simple terms',
+    'explain simply',
+    'i need a refresher',
+    'revise this',
+    'what does this mean',
+    'give me the answer',
+    'what is the answer',
+    'break it down for me',
+    'teach me',
+    'walk me through the answer',
+    'walk me through this',
+  ];
+  const isHelpRequest = helpRequestPatterns.some((p) => lowerAnswer.includes(p));
 
   const isNonResponsive = isQuestionInsteadOfAnswer || isSnippet || isGibberish || isExplicitIdk;
+
+  // NEW: Handle HELP REQUESTS — the AI should TEACH/EXPLAIN the topic and give
+  // revision topics + resources instead of only posing another follow-up question.
+  if (isHelpRequest && currentQuestionAttempts <= 2) {
+    const spec =
+      ALL_CURRICULUM.find((c) => c.day === currentState.currentCurriculumDay) ||
+      ALL_CURRICULUM[0];
+    const topic = getTopicForSpec(spec);
+    const category = getCategoryForSpec(spec);
+    const tools = spec.tools?.length ? spec.tools.join(', ') : 'core tooling';
+    const objectives = spec.objectives?.length ? spec.objectives[0] : 'core technical requirements';
+
+    const explanation = `Of course, ${candidate.name}. Let me help you break down this question so you can answer it well.\n\n` +
+      `The question is about **Day ${spec.day} — ${topic}** (${category}). It asks you to show how you would apply ${tools} to satisfy "${objectives}" in a real production AI system.\n\n` +
+      `Here is a clear explanation of what we are looking for:\n` +
+      `• **Core concept**: ${topic} involves ${spec.tools?.[0] || 'managing retrieval and generation'} — the interviewer wants to hear the "why" and "how" behind your design choices, not memorized definitions.\n` +
+      `• **What a strong answer covers**: identifying the key trade-offs (e.g., latency vs. recall, cost vs. quality), naming the specific components you would use, and describing how you would handle failures or edge cases.\n\n` +
+      `**Topics to revise before retrying:**\n` +
+      `• ${topic} — re-read your Day ${spec.day} notes and the cohort lesson.\n` +
+      `• ${spec.tools?.join(', ') || 'Vector retrieval & Generation'} implementation details.\n` +
+      `• Common pitfalls: ${spec.objectives?.join('; ') || 'failing to mention trade-offs and failure modes'}.\n\n` +
+      `**Suggested resources:**\n` +
+      `• Your Day ${spec.day} curriculum reading and mission write-up.\n` +
+      `• Revisit the module intro for "${spec.type || 'AI Systems'}" in the cohort portal.\n` +
+      `• Search the lesson for real-world examples of ${tools} in production.\n\n` +
+      `Now, take a moment and try the question again — I believe you can answer it. What would be your approach to ${topic}?`;
+
+    return {
+      isRelevantAnswer: false,
+      evaluation: { ...nonRespEval, score: 0.1, answerQuality: 'weak', recommendedAction: 'reinforce' },
+      feedback: explanation,
+      nextQuestionNumber: qNum,
+      nextCurriculumDay: currentState.currentCurriculumDay,
+      nextQuestionText: currentState.currentQuestion,
+      nextTopic: currentState.currentFocusTopic,
+      nextCategory: currentState.currentCategory,
+      nextDifficulty: currentState.difficulty,
+      learningSignal: `Question ${qNum}: Candidate requested help/explanization — provided scaffolded teaching response.`,
+      followUpSuggestions: [
+        'Retry the question with your new understanding',
+        'Ask me to explain a specific sub-topic',
+        'Move to the next topic',
+      ],
+      isInterviewComplete: false,
+    };
+  }
 
   if (isNonResponsive && currentQuestionAttempts === 1) {
     let feedback = '';

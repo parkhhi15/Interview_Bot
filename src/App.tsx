@@ -11,7 +11,8 @@ import { InterviewScreen } from './components/interview/InterviewScreen';
 import { CandidatesView } from './components/candidates/CandidatesView';
 import { FeedbackView } from './components/feedback/FeedbackView';
 import { SettingsView } from './components/settings/SettingsView';
-import { 
+import { HelpChatbot } from './components/help/HelpChatbot';
+import {
   sampleCandidate, 
   sampleCandidatesList, 
   sampleInterviewSpec
@@ -266,8 +267,10 @@ export default function App() {
             settings={settings}
             onUpdateSettings={handleUpdateSettings}
           />
-        )}
+)}
       </AppShell>
+
+      <HelpChatbot />
     </>
   );
 }

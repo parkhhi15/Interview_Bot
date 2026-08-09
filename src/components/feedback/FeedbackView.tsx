@@ -75,9 +75,11 @@ export const FeedbackView: React.FC<FeedbackViewProps> = ({
         </div>
       </div>
     );
-  }
+}
 
-  const overallCanonical = normalizeScore(feedback.overallScore);
+const overallCanonical = normalizeScore(feedback.overallScore);
+  const correctCount = feedback.correctAnswersCount ?? feedback.totalQuestionsAnswered ?? 0;
+  const unansweredCount = feedback.unansweredQuestionsCount ?? 0;
   const formattedOverall = formatScore(overallCanonical, 'slash100');
   const percentageOverall = `${overallCanonical}%`;
 
@@ -199,21 +201,23 @@ export const FeedbackView: React.FC<FeedbackViewProps> = ({
               Weighted across accuracy, design depth, and clarity
             </p>
           </div>
-        </div>
+</div>
 
-        {/* Question Limit & Progress */}
+        {/* Answered Correctly */}
         <div className="bg-[#151518] p-5 rounded-2xl border border-[#27272A] flex flex-col justify-between shadow-sm">
           <span className="text-xs font-semibold text-[#71717A] uppercase tracking-wider">
-            Questions Completed
+            Answered Correctly
           </span>
           <div className="mt-2">
             <div className="flex items-baseline gap-1">
-              <span className="text-3xl sm:text-4xl font-extrabold text-[#8B5CF6]">{questionsAnswered}</span>
-              <span className="text-sm font-semibold text-[#71717A]">/ {questionLimit}</span>
+              <span className="text-3xl sm:text-4xl font-extrabold text-[#22C55E]">{correctCount}</span>
+              <span className="text-sm font-semibold text-[#71717A]">/ {questionLimit} total questions</span>
             </div>
-            <p className="text-[11px] text-[#22C55E] mt-1 flex items-center gap-1">
-              <CheckCircle2 className="w-3.5 h-3.5" />
-              <span>Interview Stopped at Question Limit</span>
+            <p className="text-[11px] text-[#A1A1AA] mt-1 flex items-center gap-1 flex-wrap break-words">
+              <CheckCircle2 className="w-3.5 h-3.5 text-[#22C55E] shrink-0" />
+              <span>
+                {correctCount} answered correctly{unansweredCount > 0 ? ` · ${unansweredCount} not answered / skipped` : ''}
+              </span>
             </p>
           </div>
         </div>
