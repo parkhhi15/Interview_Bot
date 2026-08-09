@@ -12,7 +12,7 @@ import { CandidatesView } from './components/candidates/CandidatesView';
 import { FeedbackView } from './components/feedback/FeedbackView';
 import { SettingsView } from './components/settings/SettingsView';
 import { HelpChatbot } from './components/help/HelpChatbot';
-import {
+import { 
   sampleCandidate, 
   sampleCandidatesList, 
   sampleInterviewSpec
